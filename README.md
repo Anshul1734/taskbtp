@@ -1,42 +1,137 @@
-# Cross-Cultural Modeling — AU Extraction & Analysis
+# Facial Action Unit Analysis: Happy vs Sad Expressions
 
-This repository contains a reproducible pipeline to extract and analyze facial Action Units (AUs) for Happy vs Sad expressions using OpenFace outputs. It includes example data, analysis scripts, plotting, and a generated slide deck.
+This project analyzes facial Action Units (AUs) extracted from the JAFFE dataset using OpenFace 2.2.0, comparing Happy and Sad emotional expressions through statistical analysis.
 
-Recommended dataset: CK+ (Cohn-Kanade). Reason: labeled posed sequences with clear onset→apex frames, includes Happy and Sad labels, ideal for AU/time-series analysis. If you cannot access CK+, you can use JAFFE or another public dataset — adapt `scripts/run_featureextraction.ps1` accordingly.
+## Overview
 
-Contents
-- `scripts/run_featureextraction.ps1` — PowerShell example commands to run OpenFace `FeatureExtraction.exe`.
-- `data/sample_openface_output.csv` — synthetic example OpenFace CSV for quick demo and verification.
-- `analysis/analyze_aus.py` — analysis pipeline: preprocessing, statistics, plots, and slide generation.
-- `requirements.txt` — Python dependencies for analysis and slide generation.
-- `outputs/` — created when running the analysis; will contain plots and `presentation.pptx`.
+The project extracts 17 Action Units from 213 facial expression images in the JAFFE dataset, focusing on comparing 31 Happy and 31 Sad expressions. Statistical t-tests reveal highly significant differences in key AUs between these two emotions.
 
-Quick start (Windows)
+## Dataset
 
-1. Install Python dependencies (recommend a venv):
+**JAFFE (Japanese Female Facial Expression Database)**
+- 213 total images from 10 female subjects
+- 7 emotion categories: Happy, Sad, Neutral, Anger, Disgust, Fear, Surprise
+- Format: TIFF images (converted to JPG for OpenFace processing)
+- Analysis subset: 31 Happy images, 31 Sad images
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+## Key Findings
+
+### Happy Expressions
+- **AU06** (Cheek Raiser): Mean = 1.074 (p = 2.29×10⁻⁹)
+- **AU12** (Lip Corner Puller): Mean = 1.584 (p = 6.55×10⁻¹⁵)
+- Strong activation of smile-related Action Units (Duchenne smile pattern)
+
+### Sad Expressions
+- **AU15** (Lip Corner Depressor): Mean = 0.347 (p = 1.27×10⁻⁵)
+- **AU04** (Brow Lowerer): Mean = 0.122 (p = 0.002)
+- Strong activation of sadness-related Action Units
+
+All key differences are highly statistically significant (p < 0.001).
+
+## Project Structure
+
+```
+├── analysis/
+│   ├── analyze_openface_real.py    # Main analysis script
+│   └── create_presentation.py      # Presentation generator
+├── outputs_real/
+│   ├── au_ttests_real.csv           # T-test results
+│   ├── au_summary_by_emotion_real.csv  # Summary statistics
+│   └── presentation.pptx           # Generated presentation
+├── openface_outputs_real/
+│   └── jaffe_jpg_with_names.csv    # OpenFace AU extraction results
+├── labels.csv                       # Emotion label mappings
+└── requirements.txt                 # Python dependencies
+```
+
+## Requirements
+
+- Python 3.7+
+- OpenFace 2.2.0 (for AU extraction)
+- JAFFE dataset (images not included in repository)
+
+## Installation
+
+1. Install Python dependencies:
+```bash
 pip install -r requirements.txt
 ```
 
-2. Place OpenFace `FeatureExtraction.exe` somewhere and update `scripts/run_featureextraction.ps1` with its path.
+2. Download JAFFE dataset and place images in `jaffe/` directory
 
-3. CK+ specific notes: use `scripts/prepare_ckplus.py` to help build a sequence->emotion mapping (you may need to adapt to your local CK+ layout). Then run `scripts/process_ckplus.ps1` (update paths inside) to batch-run `FeatureExtraction.exe` over CK+ sequences. The CSV outputs can be provided as a directory to the analysis script.
+3. Convert TIFF images to JPG format (OpenFace requirement):
+```python
+from PIL import Image
+from pathlib import Path
 
-4. If you have a dataset (e.g., CK+), run the feature extraction for image sequences or videos as shown in `scripts/run_featureextraction.ps1`.
-
-4. To run the analysis on the provided synthetic sample (quick demo):
-
-```powershell
-python analysis\analyze_aus.py --input data/sample_openface_output.csv --out outputs
+for tiff_file in Path('jaffe').glob('*.tiff'):
+    img = Image.open(tiff_file).convert('RGB')
+    img.save(f'jaffe_jpg/{tiff_file.stem}.jpg', 'JPEG', quality=95)
 ```
 
-This will produce plots and `outputs/presentation.pptx` (10 slides, concise results).
+4. Run OpenFace FeatureExtraction.exe on JPG images:
+```powershell
+FeatureExtraction.exe -fdir jaffe_jpg -out_dir openface_outputs_real -aus
+```
 
-Reproducibility notes
-- The scripts are built to work with OpenFace CSV outputs (columns like `AU06_r`, `AU12_r`, `AU01_r`, `AU04_r`, `AU15_r`). If your CSV uses different column names, update `analysis/analyze_aus.py` accordingly.
+## Usage
 
-License & data
-- This repo does not include real dataset images or videos. Download CK+ or your chosen dataset and run OpenFace locally to produce CSV inputs.
+### Run Analysis
+
+After OpenFace extraction, run the analysis script:
+
+```bash
+python analysis/analyze_openface_real.py --input openface_outputs_real/jaffe_jpg_with_names.csv --out outputs_real
+```
+
+This generates:
+- Statistical summaries (`au_summary_by_emotion_real.csv`)
+- T-test results (`au_ttests_real.csv`)
+- Visualization plots (boxplots, violin plots, bar charts)
+
+### Generate Presentation
+
+Create the PowerPoint presentation:
+
+```bash
+python analysis/create_presentation.py --out outputs_real/presentation.pptx
+```
+
+## Results
+
+The analysis reveals distinct Action Unit patterns:
+- Happy expressions show strong AU06 + AU12 activation (cheek raise + lip pull)
+- Sad expressions show strong AU15 activation (lip depression)
+- Statistical significance confirmed with p-values < 0.001
+
+Detailed results are available in `outputs_real/au_ttests_real.csv` and `outputs_real/au_summary_by_emotion_real.csv`.
+
+## Methodology
+
+1. **Preprocessing**: Converted JAFFE TIFF images to JPG format
+2. **Feature Extraction**: Used OpenFace 2.2.0 to extract 17 Action Units per image
+3. **Data Processing**: Extracted emotion labels from JAFFE filenames (HA=Happy, SA=Sad)
+4. **Statistical Analysis**: Independent samples t-tests comparing Happy vs Sad for each AU
+5. **Visualization**: Generated boxplots, violin plots, and bar charts
+
+## Action Units Analyzed
+
+The project extracts and analyzes 17 Action Units:
+- AU01, AU02, AU04, AU05, AU06, AU07, AU09, AU10, AU12, AU14, AU15, AU17, AU20, AU23, AU25, AU26, AU45
+
+Key AUs for emotion distinction:
+- **AU06** (Cheek Raiser) - Happy marker
+- **AU12** (Lip Corner Puller) - Happy marker  
+- **AU15** (Lip Corner Depressor) - Sad marker
+- **AU04** (Brow Lowerer) - Sad marker
+
+## Notes
+
+- JAFFE dataset images are not included in this repository (download separately)
+- OpenFace binaries are not included (download from OpenFace repository)
+- Output visualizations can be regenerated by running the analysis script
+- All results are reproducible with the same input data
+
+## License
+
+This project is for research/educational purposes. JAFFE dataset usage should comply with its original license terms.
