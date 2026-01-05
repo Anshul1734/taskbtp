@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project specific - Large datasets (don't push image files)
+jaffe/
+jaffe_jpg/
+*.tiff
+*.jpg
+*.png
+*.jpeg
+
+# OpenFace binaries (too large for GitHub)
+OpenFace_2.2.0_win_x64/
+*.exe
+*.dll
+*.lib
+*.so
+
+# Output files (can be regenerated)
+outputs_real/*.png
+outputs_real/*.pptx
+outputs_real/~$*.pptx
+openface_outputs_real/*.csv
+openface_outputs_real/*.txt
+
+# Keep analysis results but not large visualizations
+!outputs_real/*.csv
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+
